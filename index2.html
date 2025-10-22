@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Payment Gateway</title>
+    <script type="module" src="main.js"></script>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="gateway_header">
+            <p class="text_theme">Ypay</p>
+            <a href="#" class="fading_text">Get a Premium Account</a>
+            <p class="amount">5750 F</p>
+        </div>
+        <div class="gateway_form">
+            <div>
+                <p class="call_to_action">Pay with Ypay</p>
+                <span class="fading_text">Follow these steps to secure your payment</span>
+            </div>
+            <form action="">
+                <div class="form_item">
+                    <label for="card_number">Card number</label>
+                    <input id="card_number" class="card_number_input" type="text" placeholder="Enter your card number" required>
+                </div>
+
+                <div class="form_item">
+                    <label for="otp">Enter the OTP</label>
+                    <div class="pinput">
+                        <input class="pinput_item" type="text" maxlength="1" required>
+                        <input class="pinput_item" type="text" maxlength="1" required>
+                        <input class="pinput_item" type="text" maxlength="1" required>
+                        <input class="pinput_item" type="text" maxlength="1" required>
+                    </div>
+                    <span class="fading_text">Generate the OTP via login page</span>
+                </div>
+
+                <div class="form_item">
+                    <input type="submit" value="Continue" class="primary_btn btn">
+                </div>
+            </form>
+        </div>
+        <div class="gateway_buttons">
+            <p>OR</p>
+            <input type="button" value="Create an account" class="btn secondary_btn">
+        </div>
+    </div>
+</body>
+<script src="scripts.js"></script>
+</html>
