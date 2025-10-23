@@ -32,6 +32,7 @@ const submitState = (isFormValid)=>
 // card number validations
 const cardNumberValidation = function ()
 {
+    const card_icon = document.getElementsByClassName("card_icon")[0];
     // regex validation
     if (cardPattern.test(card_number.value.toString()))
     {
@@ -44,8 +45,9 @@ const cardNumberValidation = function ()
         {
             error_message_card_number.remove();
         }
-
         submitState(true)
+        card_icon.style.top = "50%";
+
     }
     else
     {
@@ -63,6 +65,8 @@ const cardNumberValidation = function ()
             error_message_card_number.style.fontStyle = "italic";
             error_message_card_number.style.marginTop = "4px";
             error_message_card_number.style.display = "block";
+
+            card_icon.style.top = "35%";
         }
         card_number.parentNode.appendChild(error_message_card_number);
         submitState(false)
@@ -95,13 +99,13 @@ const handleKeyDown = (e) =>
     if (e.key === 'Delete' || e.key === 'Backspace')
     {
         const index = otp_inputs.indexOf(e.target);
-        if (index > 0)
+        if (index >= 0 && index < 4)
         {
             otp_inputs[index].value = '';
-            otp_inputs[index + 1].focus();
+            otp_inputs[index - 1].focus();
         }
         validateOTP();
-        // e.preventDefault();
+        e.preventDefault();
     }
 }
 

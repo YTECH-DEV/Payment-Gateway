@@ -47,17 +47,16 @@ export default paymentConfig;
 
 // Usage examples:
 
-// // 1. Basic usage with default values
-// // paymentConfig.initialize();
-//
-// // 2. Custom configuration
-// paymentConfig.initialize({
-//     shopName: "MY FASHION STORE",
-//     amount: "50000",
-//     currency: "XOF",
-//     logo: "./assets/images/my-shop-logo.png",
-//     downloadUrl: "https://example.com/download-app"
-// });
-//
+// 1. Basic usage with default values
+let x =  paymentConfig.initialize();
+
+// 2. Custom configuration
+paymentConfig.initialize({
+    shopName: "MY FASHION STORE",
+    amount: "50000",
+    currency: "XOF",
+    logo: "./assets/images/my-shop-logo.png",
+});
+
 // // 3. Update later if needed
 // paymentConfig.update({ amount: "75000" });
