@@ -2,73 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <link rel="stylesheet" href="./cdn/style.css">
-    <script type="module" src="./cdn/main.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YPAY Integration Example</title>
+    <link rel="stylesheet" href="./ui/styles/style.css">
 </head>
 <body>
-<button class="payment_btn"></button>
-<button class="payment_btn btn_outlined"></button>
-<button class="payment_btn btn_filled"></button>
-<button class="payment_btn btn_icon"></button>
+<h1>YPAY Payment Integration</h1>
+
+<!-- Example 1: Default styled button -->
+<button class="payment_btn btn_filled" data-amount="5000">
+    <!-- Logo will be shown automatically -->
+</button>
+
+<!-- Example 2: Custom button -->
+<button class="custom_payment_btn btn_outlined" data-amount="10000">
+    Pay 10000 XOF
+</button>
+
+<!-- Example 3: Icon button -->
+<button class="payment_btn btn_icon" data-amount="2500">
+    <!-- Icon only -->
+</button>
+
+<script type="module">
+    import PaymentUI from './ui/js/paymentUI.js';
+    import buttonController from './ui/js/button_controller.js';
 
 
+    const paymentUI = new PaymentUI(
+        'SHOP-1234',
+        'XOF',
+        'My Shop Name',
+        //'./ui/assets/images/shop_logo.png',
+        'fr'
+    );
 
+    // Initialize button controller
+    buttonController(paymentUI);
+
+    // Or trigger payment programmatically
+    // document.getElementById('custom-trigger')?.addEventListener('click', () =>
+    // {
+    //     paymentUI.triggerPayment(false, 15000)
+    //     paymentUI.renderForm();
+    // });
+</script>
 </body>
 </html>
-
-<script>
-document.querySelectorAll('.payment_btn').forEach((item) => {
-    item.addEventListener('click', async() =>
-    {
-        // Check if modal already exists
-        if (document.querySelector('.modal-overlay'))
-        {
-            document.querySelector('.modal-overlay').remove();
-        }
-
-        try
-        {
-            // Fetch the form HTML
-            const response = await fetch('./cdn/modal.html');
-            const html = await response.text();
-
-            // Create modal overlay
-            const modal_overlay = document.createElement('div');
-            modal_overlay.className = 'modal-overlay';
-            modal_overlay.innerHTML = html;
-
-            document.body.appendChild(modal_overlay);
-
-            // Close button functionality
-            const closeBtn = modal_overlay.querySelector('.close_modal');
-            closeBtn.addEventListener('click', () => {
-                modal_overlay.remove();
-            });
-
-            // Close on overlay click (not modal content)
-            modal_overlay.addEventListener('click', (e) => {
-                if (e.target === modal_overlay) {
-                    modal_overlay.remove();
-                }
-            });
-
-            // Prevent form submission from refreshing page
-            const form = modal_overlay.querySelector('form');
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-            });
-
-            // Initialize form validation
-            initFormValidation();
-
-        }
-        catch (error)
-        {
-            console.error('Error loading modal:', error);
-        }
-
-
-    })
-})
-</script>

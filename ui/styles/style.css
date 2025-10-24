@@ -1,0 +1,8 @@
+/*root of css variables*/
+@import url("./root.css");
+/*buttons styles*/
+@import url("./buttons.css");
+/*form styles*/
+@import url("./form.css");
+/*modal styles*/
+@import url("./modal.css");
