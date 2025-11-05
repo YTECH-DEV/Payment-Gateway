@@ -1,11 +1,12 @@
 import YPAY from "../../ypay/ypay.js";
 import Local from "./local.js";
 import initFormController from './form_controller.js';
+import Transaction from "../../ypay/transaction";
 
 
 class PaymentUI
 {
-    constructor(receiver, currency, shopName, logo, language)
+    constructor(receiver, currency, shopName, logo, language, handlers = {})
     {
         try
         {
@@ -18,6 +19,7 @@ class PaymentUI
             this.receiver = receiver;
             this.amount = 0;
             this.modal = false;
+            this.handlers = handlers;
 
             this.ypay = new YPAY(receiver, currency, shopName);
 
@@ -38,22 +40,25 @@ class PaymentUI
         }
     }
 
-    triggerPayment(modal, amount)
-    {
-        console.log(modal, amount);
-        try
-        {
+    async triggerPayment(modal, sender, amount, payment_code) {
+        try {
             this.modal = modal;
+            this.sender = sender;
             this.amount = amount || 0.0;
+            this.payment_code = payment_code;
 
             // Amount validation
             if (this.amount <= 0)
             {
                 throw new Error('Amount must be greater than 0');
             }
-        }
-        catch (e)
-        {
+
+            this.transaction = new Transaction(this.receiver, this.sender, this.payment_code, amount, this.handlers);
+
+            return await this.transaction.exec();
+
+
+        } catch (e) {
             console.error(e);
             throw e;
         }

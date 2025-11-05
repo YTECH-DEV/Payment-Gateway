@@ -1,94 +1,125 @@
-import PaymentData from "./payment_data.js";
-import cardPattern from "./patterns.js";
+import {cardPattern, paymentCodePattern, tokenPattern} from "./patterns.js";
 
-// ----- WILL TAKE CARE OF CREATING A YPAY MONEY TRANSFER EVENT
 class Transaction
 {
-    constructor(sender = "", receiver = "", paymentData = {}, options = {})
+    constructor(token = "", sender = "", otp = "", amount = 0, handlers = {}) 
     {
-        try
+        this.sender = sender;
+        this.token = token;
+        this.otp = otp;
+        this.amount = parseFloat(amount.toString());
+
+        this.paymentHandlers =
         {
-            this.sender = sender;
-            this.receiver = receiver;
+            onSuccess: handlers.onSuccess || (() => {}),
+            onFailure: handlers.onFailure || (() => {})
+        };
 
-            this._validate();
-
-            this.paymentData = new PaymentData(paymentData);
-
-            this.paymentHandlers = {
-                onSuccess: options.onSuccess || (() => {}),
-                onFailure: options.onFailure || (() => {})
-            };
-        }
-        catch (e)
+        // Validate during construction
+        const validationError = this._validate();
+        if (validationError)
         {
-            console.error(e);
-            throw new Error(e);
+            this.validationError = validationError;
         }
     }
 
     _validate()
     {
-        let errorStack = [];
+        const errors = [];
 
-        // Validate sender card format
-        if (!cardPattern.test(this.sender))
+        if (!this.sender)
         {
-            errorStack.push("The sender card is not valid.");
+            errors.push("Sender card is required.");
         }
-
-        // Validate receiver card format
-        if (!cardPattern.test(this.receiver))
+        else if (!cardPattern.test(this.sender))
         {
-            errorStack.push("The receiver card is not valid.");
+            errors.push("Sender card format is invalid.");
         }
 
-        if (errorStack.length > 0) {
-            throw new Error(errorStack.join("\n"));
+        if (!this.token)
+        {
+            errors.push("token is required.");
         }
+        else if (!tokenPattern.test(this.token))
+        {
+            errors.push("token card format is invalid.");
+        }
+
+        if (!this.otp)
+        {
+            errors.push("Payment code is required.");
+        }
+        else if (!paymentCodePattern.test(this.otp))
+        {
+            errors.push("Payment code format is invalid.");
+        }
+
+        if (isNaN(this.amount) || this.amount <= 0)
+        {
+            errors.push("Amount must be a positive number.");
+        }
+
+        return errors.length > 0 ? new Error(errors.join("\n")) : null;
     }
 
     async exec()
     {
+        // Check for validation errors first
+        if (this.validationError)
+        {
+            this.paymentHandlers.onFailure(this.validationError);
+            throw this.validationError;
+        }
+
         try
         {
-
-            // {
-            //     "amount": 500,
-            //     "card_code": "AAAA-0000",
-            //     "payment_code": 1234
-            // }
-            const paymentResponse = await fetch("https://ypay.ytech-bf.com/api/v1/project/make-payment",
+            const paymentResponse = await fetch(
+                "https://ypay.ytech-bf.com/api/v1/project/make-payment",
                 {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer 293|y9BPlmt7uHOIcdRDg0Qd920cpa94KHdFNIOHx9GQ9c59895f"
-                },
-                body: JSON.stringify({
-                    sender: this.sender,
-                    receiver: this.receiver,
-                    amount: this.paymentData.amount,
-                    currency: this.paymentData.currency,
-                    shopName: this.paymentData.shopName
-                })
-            });
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${this.token}`
+                    },
+                    body: JSON.stringify({
+                        card_code: this.sender,
+                        amount: this.amount,
+                        payment_code: this.otp
+                    })
+                }
+            );
 
-            if (paymentResponse.status!==200)
+            // Check for successful status codes (200-299)
+            if (paymentResponse.ok)
             {
-                throw new Error(`Payment failed: ${paymentResponse.statusText}`);
+                const data = await paymentResponse.json();
+                this.paymentHandlers.onSuccess(data);
+                return data;
             }
 
-            const data = await paymentResponse.json();
-            this.paymentHandlers.onSuccess(data);
-
-            return data;
+            // Handle HTTP errors
+            const errorData = await paymentResponse.json().catch(() => ({}));
+            const errorMessage = errorData.message || paymentResponse.statusText || "Payment failed";
+            throw new Error(`Payment failed (${paymentResponse.status}): ${errorMessage}`);
         }
         catch (error)
         {
             this.paymentHandlers.onFailure(error);
             throw error;
         }
+    }
+
+
+    // Validation checker
+    isValid()
+    {
+        return !this.validationError;
+    }
+
+    // Get validation errors without throwing
+    getValidationErrors()
+    {
+        return this.validationError ? this.validationError.message : null;
     }
 }
 

@@ -20,18 +20,31 @@
 <script type="module">
     import PaymentUI from './ui/js/paymentUI.js';
     import buttonController from './ui/js/button_controller.js';
+    import transaction from "./ypay/transaction";
+    import Transaction from "./ypay/transaction";
+
+    let t = new Transaction(
+        "AAAA-AAAA",
+        "BBBB-BBBB",
+        "2673",
+        3000,
+    )
+
+    await t.exec()
 
 
-    const paymentUI = new PaymentUI(
-        'SHOP-1234',
-        'XOF',
-        'My Shop Name',
-        //'./ui/assets/images/shop_logo.png',
-        'fr'
-    );
-
-    // Initialize button controller
-    buttonController(paymentUI);
+    // const paymentUI = new PaymentUI(
+    //     'SHOP-1234',
+    //     'XOF',
+    //     'My Shop Name',
+    //     //'./ui/assets/images/shop_logo.png',
+    //     'fr'
+    // );
+    //
+    // paymentUI.triggerPayment(false, 3000)
+    //
+    // // Initialize button controller
+    // buttonController(paymentUI);
 </script>
 </body>
 </html>
