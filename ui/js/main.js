@@ -1,6 +1,7 @@
-import local from "./local";
-import PaymentUI from "./paymentUI";
-import buttonController from "./button_controller";
-import initFormController from "./form_controller";
+import PaymentUI from "./paymentUI.js";
+import buttonController from "./button_controller.js";
+import local from "./localization.js";
 
-export {PaymentUI, buttonController, initFormController, local};
+buttonController();
+
+export default PaymentUI;

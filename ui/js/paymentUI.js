@@ -1,27 +1,35 @@
 import YPAY from "../../ypay/ypay.js";
-import Local from "./local.js";
-import initFormController from './form_controller.js';
-import Transaction from "../../ypay/transaction";
+import Localization from "./localization.js";
 
 
 class PaymentUI
 {
-    constructor(receiver, currency, shopName, logo, language, handlers = {})
+    constructor(token, currency, language, handlers = {}, shopName, logo, amount)
     {
         try
         {
-            this.validateConfig({ language, shopName, currency });
 
             this.logo = logo || '';
             this.language = language || 'en';
             this.shopName = shopName || 'Unknown';
             this.currency = currency || 'XOF';
-            this.receiver = receiver;
-            this.amount = 0;
+            this.token = token;
+            this.amount = amount || 0;
             this.modal = false;
             this.handlers = handlers;
 
-            this.ypay = new YPAY(receiver, currency, shopName);
+            // Set language
+            this.localization = new Localization();
+            this.localization.setLang(this.language);
+
+            // Validate during construction
+            const validationError = this._validate();
+            if (validationError)
+            {
+                this.validationError = validationError;
+            }
+
+            this.ypay = new YPAY(token, currency, shopName);
 
             if (PaymentUI.instance)
             {
@@ -29,9 +37,6 @@ class PaymentUI
             }
 
             PaymentUI.instance = this;
-
-            // Set language
-            Local.setLang(this.language);
         }
         catch (e)
         {
@@ -40,45 +45,37 @@ class PaymentUI
         }
     }
 
-    async triggerPayment(modal, sender, amount, payment_code) {
-        try {
-            this.modal = modal;
-            this.sender = sender;
-            this.amount = amount || 0.0;
-            this.payment_code = payment_code;
-
-            // Amount validation
-            if (this.amount <= 0)
-            {
-                throw new Error('Amount must be greater than 0');
-            }
-
-            this.transaction = new Transaction(this.receiver, this.sender, this.payment_code, amount, this.handlers);
-
-            return await this.transaction.exec();
-
-
-        } catch (e) {
-            console.error(e);
-            throw e;
+    async triggerPayment(card_code, otp, amount, modal)
+    {
+        this.modal = modal;
+        this.card_code = card_code;
+        this.amount = amount || 0.0;
+        this.otp = otp;
+        await this.ypay.createTransaction(this.card_code, this.amount, this.otp)
+        .then((data)=>
+        {
+            // alert for success message
         }
+        ).catch((err)=>
+        {
+            // alert for error message
+        });
     }
 
     // Validates the configurations
-    validateConfig(config)
+    _validate()
     {
-        let errorStack = [];
-
-        if (config.language && !Object.keys(Local.languages).includes(config.language))
+        let errors = [];
+        if (this.language && !this.localization.isValid(this.language))
         {
-            errorStack.push('Language is not available');
+            errors.push('Language is not available');
         }
 
-        if (errorStack.length > 0)
+        if (errors.length > 0)
         {
-            throw new Error(errorStack.join('\n'));
+            throw new Error(errors.join('\n'));
         }
-        return true;
+        return errors.length > 0 ? new Error(errors.join("\n")) : null;
     }
 
     // Gets the styles for the form
@@ -125,11 +122,11 @@ class PaymentUI
                 
                 <!--       YTECH MOBILE APP     -->
                 <div class="modal_info">
-                    <div class="message">${Local.tag("message") + "  <a>" + this.formatAmount()}<a/></div>
-                    <div class="separator"> <hr> ${Local.tag("no_app")} <hr></div>
+                    <div class="message">${this.localization.tag("message") + "  <a>" + this.formatAmount()}<a/></div>
+                    <div class="separator"> <hr> ${this.localization.tag("no_app")} <hr></div>
                     <div class="download_button">
                         <button>
-                            ${Local.tag("download")}
+                            ${this.localization.tag("download")}
                             <svg class="download_icon" width="20px" height="20px" stroke-width="1.5" viewBox="0 0 20 20" fill="none">
                                 <path d="M6 20L18 20" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                                 <path d="M12 4V16M12 16L15.5 12.5M12 16L8.5 12.5" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -142,19 +139,19 @@ class PaymentUI
                 <div class="modal_form">
                     <form action="#">
                         <div class="form_item">
-                            <label class="card_label" for="card_number">${Local.tag("card_label")}</label><br>
+                            <label class="card_label" for="card_number">${this.localization.tag("card_label")}</label><br>
                             <div class="card_input_container">
                                 <svg class="card_icon" width="22px" height="22px" viewBox="0 0 22 22" stroke-width="1.5" fill="none">
                                     <path d="M22 9V17C22 18.1046 21.1046 19 20 19H4C2.89543 19 2 18.1046 2 17V7C2 5.89543 2.89543 5 4 5H20C21.1046 5 22 5.89543 22 7V9ZM22 9H6" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                                     <path d="M16.5 13.3819C16.7654 13.1444 17.1158 13 17.5 13C18.3284 13 19 13.6716 19 14.5C19 15.3284 18.3284 16 17.5 16C17.1158 16 16.7654 15.8556 16.5 15.6181" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                                     <path d="M16.5 13.3819C16.2346 13.1444 15.8842 13 15.5 13C14.6716 13 14 13.6716 14 14.5C14 15.3284 14.6716 16 15.5 16C15.8842 16 16.2346 15.8556 16.5 15.6181" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                                 </svg>
-                                <input id="card_number" class="card_number_input" type="text" autocomplete="off" placeholder="${Local.tag("card_placeholder")}" required>
+                                <input id="card_number" class="card_number_input" type="text" autocomplete="off" placeholder="${this.localization.tag("card_placeholder")}" required>
                             </div>
                         </div>
         
                         <div class="form_item">
-                            <label for="otp_inputs" class="otp_label">${Local.tag("otp_label")}</label><br>
+                            <label for="otp_inputs" class="otp_label">${this.localization.tag("otp_label")}</label><br>
                             <div id="otp_inputs" class="otp_inputs">
                                 <label><input class="otp_input_item" type="text" maxlength="1" autocomplete="off" required></label>
                                 <label><input class="otp_input_item" type="text" maxlength="1" autocomplete="off" required></label>
@@ -164,7 +161,7 @@ class PaymentUI
                         </div>
         
                         <div class="form_item">
-                            <button class="submit_button" type="submit">${Local.tag("submit_button")}</button>
+                            <button class="submit_button" type="submit">${this.localization.tag("submit_button")}</button>
                         </div>
                     </form>
         
@@ -174,7 +171,7 @@ class PaymentUI
                             <path d="M22 9V7C22 5.89543 21.1046 5 20 5H4C2.89543 5 2 5.89543 2 7V17C2 18.1046 2.89543 19 4 19H14M22 9H6M22 9V13" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                             <path d="M21.1667 18.5H21.4C21.7314 18.5 22 18.7686 22 19.1V21.4C22 21.7314 21.7314 22 21.4 22H17.6C17.2686 22 17 21.7314 17 21.4V19.1C17 18.7686 17.2686 18.5 17.6 18.5H17.8333M21.1667 18.5V16.75C21.1667 16.1667 20.8333 15 19.5 15C18.1667 15 17.8333 16.1667 17.8333 16.75V18.5M21.1667 18.5H17.8333" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
                         </svg>
-                        <span>${Local.tag("secured_payment")}</span>
+                        <span>${this.localization.tag("secured_payment")}</span>
                     </div>
                 </div>
             </div>
@@ -240,7 +237,6 @@ class PaymentUI
         {
             import('./form_controller.js').then(module =>
             {
-                console.log(module);
 
                 if (module.default)
                 {

@@ -10,15 +10,4 @@ class Currency
     }
 }
 
-class Language
-{
-    static FR = "FR";
-    static EN = "EN";
-
-    static isValid(language)
-    {
-        return Object.values(this).includes(language.toUpperCase());
-    }
-}
-
-export {Currency, Language};
+export {Currency};

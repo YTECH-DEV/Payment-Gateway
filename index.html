@@ -11,40 +11,23 @@
 <button class="payment_btn btn_filled" data-amount="5000">
 </button>
 
-<button class="custom_payment_btn btn_outlined" data-amount="10000">Pay 10000 XOF</button>
+<button class="custom_payment_btn btn_outlined" data-amount="10000" data-modal="false">Pay 10000 XOF</button>
 <button class="custom_payment_btn btn_filled" data-amount="10000">Pay 10000 XOF</button>
 
 <button class="payment_btn btn_icon" data-amount="2500">
 </button>
 
 <script type="module">
-    import PaymentUI from './ui/js/paymentUI.js';
-    import buttonController from './ui/js/button_controller.js';
-    import transaction from "./ypay/transaction";
-    import Transaction from "./ypay/transaction";
+    import PaymentUI from "./ui/js/main.js";
 
-    let t = new Transaction(
-        "AAAA-AAAA",
-        "BBBB-BBBB",
-        "2673",
-        3000,
-    )
+    const paymentUI = new PaymentUI(
+        'SHOP-1234',
+        'XOF',
+        'en',
+        'My Shop Name',
+        //'./ui/assets/images/shop_logo.png',
 
-    await t.exec()
-
-
-    // const paymentUI = new PaymentUI(
-    //     'SHOP-1234',
-    //     'XOF',
-    //     'My Shop Name',
-    //     //'./ui/assets/images/shop_logo.png',
-    //     'fr'
-    // );
-    //
-    // paymentUI.triggerPayment(false, 3000)
-    //
-    // // Initialize button controller
-    // buttonController(paymentUI);
+    );
 </script>
 </body>
 </html>

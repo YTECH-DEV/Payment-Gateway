@@ -1,15 +1,14 @@
 import Transaction from "./transaction.js";
-import PaymentData, {Currency, Language} from "./enums.js";
+import {Currency} from "./enums.js";
 
 // ----- ONE TIME CONFIGURATIONS FOR YPAY PAYMENTS
 class YPAY
 {
     // one-time initialization
-    constructor(token, currency, language, shopName)
+    constructor(token, currency, shopName)
     {
         this.token = token;
         this.currency = currency || Currency.XOF;
-        this.language = language || Language.FR;
         this.shopName = shopName || "Undefined";
 
 
@@ -54,11 +53,6 @@ class YPAY
         if(!Currency.isValid(this.currency))
         {
             errors.push(this.currency + " is not supported yet");
-        }
-
-        if(!Language.isValid(this.language))
-        {
-            errors.push(this.language + " is not supported yet");
         }
 
         return errors.length > 0 ? new Error(errors.join("\n")) : null;
