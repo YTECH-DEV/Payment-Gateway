@@ -1,102 +1,122 @@
 import YPAY from "../../ypay/ypay.js";
 import Localization from "./localization.js";
 
-
 class PaymentUI
 {
-    constructor(token, currency, language, handlers = {}, shopName, logo, amount)
+    constructor(token, currency, language, handlers = {}, shopName, logo)
     {
-        try
-        {
+        this.logo = logo || '';
+        this.language = language || 'en';
+        this.shopName = shopName || 'Unknown';
+        this.currency = currency || 'XOF';
+        this.token = token;
+        this.modal = false;
+        this.handlers = handlers;
+        this.overlayElement = null;
+        this.newWindowRef = null;
 
-            this.logo = logo || '';
-            this.language = language || 'en';
-            this.shopName = shopName || 'Unknown';
-            this.currency = currency || 'XOF';
-            this.token = token;
-            this.amount = amount || 0;
-            this.modal = false;
-            this.handlers = handlers;
 
-            // Set language
-            this.localization = new Localization();
-            this.localization.setLang(this.language);
+        // Set language
+        this.localization = new Localization();
+        this.localization.setLang(this.language);
 
-            // Validate during construction
-            const validationError = this._validate();
-            if (validationError)
-            {
-                this.validationError = validationError;
-            }
+        // Validate
+        this._validate();
 
-            this.ypay = new YPAY(token, currency, shopName);
-
-            if (PaymentUI.instance)
-            {
-                return PaymentUI.instance;
-            }
-
-            PaymentUI.instance = this;
-        }
-        catch (e)
-        {
-            console.error(e);
-            throw e;
-        }
+        this.ypay = new YPAY(token, currency, shopName);
     }
 
-    // Validates the configurations
     _validate()
     {
         let errors = [];
+
         if (this.language && !this.localization.isValid(this.language))
         {
             errors.push('Language is not available');
         }
 
+        if (this.token==="")
+        {
+            errors.push('Token is required');
+        }
+
+        // if (this.amount <= 0)
+        // {
+        //     errors.push('Amount must be greater than 0');
+        // }
+
         if (errors.length > 0)
         {
             throw new Error(errors.join('\n'));
         }
-        return errors.length > 0 ? new Error(errors.join("\n")) : null;
     }
 
     async triggerPayment()
     {
-        // fetches the card code
-        let card_code = document.getElementById("card_number").value;
-        // fetches the otp code
-        let otp = parseInt([...document.getElementsByClassName("otp_input_item")].map(elem => elem.value).join(""));
-        // changes the status of the submit button
-        let submit_button = document.getElementsByClassName("submit_button")
-        submit_button.innerHTML = this.localization.tag("submit_button_processing");
-        submit_button.disabled = true;
+        try
+        {
+            const doc = this.newWindowRef ? this.newWindowRef.document : document;
 
+            const cardInput = doc.getElementById("card_number");
+            const card_code = cardInput.value.trim();
 
-        await this.ypay.createTransaction(card_code, this.amount, otp)
-            .then((data)=>
+            const otpInputs = doc.getElementsByClassName("otp_input_item");
+            const otp = parseInt([...otpInputs].map(elem => elem.value).join(""));
+
+            const submit_button = doc.querySelector(".submit_button");
+            if (submit_button)
             {
-                // alert for success message
-                document.getElementsByClassName("modal_box")[0].remove();
+                submit_button.innerHTML = this.localization.tag("submit_button_processing");
+                submit_button.disabled = true;
+            }
 
+            const data = await this.ypay.createTransaction(card_code, this.amount, otp);
 
-            })
-            .catch((err)=>
+            this.closePaymentUI();
+            this.showPopupMessage('success', data);
+
+            if (this.handlers.onSuccess)
             {
-                document.getElementsByClassName("modal_box")[0].remove();
-                // alert for error message
-            });
+                this.handlers.onSuccess(data);
+            }
+
+        }
+        catch (err)
+        {
+            console.error('Payment error:', err);
+            this.closePaymentUI();
+            this.showPopupMessage('error', err);
+
+            if (this.handlers.onError)
+            {
+                this.handlers.onError(err);
+            }
+        }
     }
 
-    showPopupMessage()
+    closePaymentUI()
     {
+        if (this.overlayElement)
+        {
+            this.overlayElement.remove();
+            this.overlayElement = null;
+        }
 
+        if (this.newWindowRef && !this.newWindowRef.closed)
+        {
+            this.newWindowRef.close();
+            this.newWindowRef = null;
+        }
     }
 
-    // Gets the styles for the form
-    getFormStyles()
+    showPopupMessage(type, data)
     {
-        return "./ui/styles/style.css";
+        const message = type === 'success'
+            ? this.localization.tag("payment_success") || 'Payment successful!'
+            : this.localization.tag("payment_error") || 'Payment failed. Please try again.';
+
+        alert(message);
+        console.log(`Payment ${type}:`, data);
     }
 
     formatAmount()
@@ -106,139 +126,162 @@ class PaymentUI
             : `${this.currency} ${this.amount}`;
     }
 
-    getFormScriptPath()
+    getTemplateData()
     {
-        return "./ui/js/form_controller.js";
+        return {
+            language: this.language,
+            logoImg: this.logo ? `<img src="${this.logo}" alt="Shop Logo"/>` : '',
+            shopName: this.shopName,
+            amount: this.formatAmount(),
+            texts: {
+                message: this.localization.tag("message"),
+                no_app: this.localization.tag("no_app"),
+                download: this.localization.tag("download"),
+                card_label: this.localization.tag("card_label"),
+                card_placeholder: this.localization.tag("card_placeholder"),
+                otp_label: this.localization.tag("otp_label"),
+                submit_button: this.localization.tag("submit_button"),
+                secured_payment: this.localization.tag("secured_payment")
+            }
+        };
     }
 
-    getFormTemplate()
+    attachEventListeners(targetDocument = document)
     {
-        const logoImg = this.logo ? `<img src="${this.logo}" alt="Shop Logo"/>` : '';
-        const closeBtn = this.modal ? '<button class="close_modal">×</button>' : '<div></div>';
+        const form = targetDocument.getElementById('payment_form');
+        if (form)
+        {
+            form.addEventListener('submit', (e) =>
+            {
+                e.preventDefault();
+                this.triggerPayment();
+            });
+        }
 
-        return `
-        <!DOCTYPE html>
-        <html lang="${this.language}">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Payment Gateway</title>
-            <link rel="stylesheet" href="${this.getFormStyles()}">
-        </head>
-        <body>
-            <div class="modal_box">
-                <!--       HEADER     -->
-                <div class="modal_header">
-                    <div class="first_stack">
-                        <div class="shop_icon">${logoImg}</div>
-                        <div class="ytech_icon">
-                            ${closeBtn}
-                            <img src="./ui/assets/images/logo_inverted.svg" alt="ypay logo">
-                        </div>
-                    </div>
-                    <span class="second_stack">${this.shopName}</span>
-                    <span class="third_stack">${this.formatAmount()}</span>
-                </div>
-                
-                <!--       YTECH MOBILE APP     -->
-                <div class="modal_info">
-                    <div class="message">${this.localization.tag("message") + "  <a>" + this.formatAmount()}<a/></div>
-                    <div class="separator"> <hr> ${this.localization.tag("no_app")} <hr></div>
-                    <div class="download_button">
-                        <button>
-                            ${this.localization.tag("download")}
-                            <svg class="download_icon" width="20px" height="20px" stroke-width="1.5" viewBox="0 0 20 20" fill="none">
-                                <path d="M6 20L18 20" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                <path d="M12 4V16M12 16L15.5 12.5M12 16L8.5 12.5" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                
-                <!--       FORM     -->
-                <div class="modal_form">
-                    <form action="#">
-                        <div class="form_item">
-                            <label class="card_label" for="card_number">${this.localization.tag("card_label")}</label><br>
-                            <div class="card_input_container">
-                                <svg class="card_icon" width="21px" height="22px" viewBox="0 0 22 22" stroke-width="1.5" fill="none">
-                                    <path d="M22 9V17C22 18.1046 21.1046 19 20 19H4C2.89543 19 2 18.1046 2 17V7C2 5.89543 2.89543 5 4 5H20C21.1046 5 22 5.89543 22 7V9ZM22 9H6" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                    <path d="M16.5 13.3819C16.7654 13.1444 17.1158 13 17.5 13C18.3284 13 19 13.6716 19 14.5C19 15.3284 18.3284 16 17.5 16C17.1158 16 16.7654 15.8556 16.5 15.6181" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                    <path d="M16.5 13.3819C16.2346 13.1444 15.8842 13 15.5 13C14.6716 13 14 13.6716 14 14.5C14 15.3284 14.6716 16 15.5 16C15.8842 16 16.2346 15.8556 16.5 15.6181" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                                </svg>
-                                <input id="card_number" class="card_number_input" type="text" autocomplete="off" placeholder="${this.localization.tag("card_placeholder")}" required>
-                            </div>
-                        </div>
-        
-                        <div class="form_item">
-                            <label for="otp_inputs" class="otp_label">${this.localization.tag("otp_label")}</label><br>
-                            <div id="otp_inputs" class="otp_inputs">
-                                <label><input class="otp_input_item" type="text" maxlength="1" autocomplete="off" required></label>
-                                <label><input class="otp_input_item" type="text" maxlength="1" autocomplete="off" required></label>
-                                <label><input class="otp_input_item" type="text" maxlength="1" autocomplete="off" required></label>
-                                <label><input class="otp_input_item" type="text" maxlength="1" autocomplete="off" required></label>
-                            </div>
-                        </div>
-        
-                        <div class="form_item">
-                            <button class="submit_button" type="submit">${this.localization.tag("submit_button")}</button>
-                        </div>
-                    </form>
-        
-                    <!--       SECURED MESSAGE     -->
-                    <div class="secured_payment">
-                        <svg class="secured_payment_icon"  width="18px" height="18px" viewBox="0 0 24 24" stroke-width="1.5" fill="none" color="#000000">
-                            <path d="M22 9V7C22 5.89543 21.1046 5 20 5H4C2.89543 5 2 5.89543 2 7V17C2 18.1046 2.89543 19 4 19H14M22 9H6M22 9V13" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                            <path d="M21.1667 18.5H21.4C21.7314 18.5 22 18.7686 22 19.1V21.4C22 21.7314 21.7314 22 21.4 22H17.6C17.2686 22 17 21.7314 17 21.4V19.1C17 18.7686 17.2686 18.5 17.6 18.5H17.8333M21.1667 18.5V16.75C21.1667 16.1667 20.8333 15 19.5 15C18.1667 15 17.8333 16.1667 17.8333 16.75V18.5M21.1667 18.5H17.8333" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                        </svg>
-                        <span>${this.localization.tag("secured_payment")}</span>
-                    </div>
-                </div>
-            </div>
-           <script type="module" src="${this.getFormScriptPath()}"></script>
-        </body>
-        </html>
-        
-        `;
-    }
-
-    showModal()
-    {
-        // Create modal overlay
-        const overlay = document.createElement('div');
-        overlay.className = 'modal_overlay';
-        overlay.innerHTML = this.getFormTemplate();
-
-        // Add to body
-        document.body.appendChild(overlay);
-
-        // Add close button handler
         if (this.modal)
         {
-            const closeBtn = overlay.querySelector('.close_modal');
+            const closeBtn = targetDocument.querySelector('.close_modal');
             if (closeBtn)
             {
-                closeBtn.addEventListener('click', () =>
-                {
-                    overlay.remove();
+                closeBtn.addEventListener('click', () => {
+                    this.closePaymentUI();
+                    if (this.handlers.onClose)
+                    {
+                        this.handlers.onClose();
+                    }
+                });
+            }
+
+            const overlay = targetDocument.querySelector('.modal_overlay');
+            if (overlay)
+            {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        this.closePaymentUI();
+                        if (this.handlers.onClose)
+                        {
+                            this.handlers.onClose();
+                        }
+                    }
                 });
             }
         }
     }
 
+    showModal()
+    {
+        // Load and render template
+        fetch('./ui/templates/payment_form.html')
+            .then(response => response.text())
+            .then(template =>
+            {
+                const overlay = document.createElement('div');
+                overlay.className = 'modal_overlay';
+                overlay.innerHTML = this.renderTemplate(template);
+
+                this.overlayElement = overlay;
+                document.body.appendChild(overlay);
+
+                setTimeout(() => {
+                    this.attachEventListeners(document);
+                    this.initializeFormController(document);
+                }, 0);
+            })
+            .catch(err =>
+            {
+                console.error('Failed to load template:', err);
+                if (this.handlers.onError)
+                {
+                    this.handlers.onError(err);
+                }
+            });
+    }
+
     openNewTab()
     {
-        const newWindow = window.open("", '_blank');
+        fetch('./ui/templates/payment_form.html')
+            .then(response => response.text())
+            .then(template =>
+            {
+                // Open in new tab by removing window features (3rd parameter)
+                const newTab = window.open("", '_blank');
 
-        if (!newWindow)
-        {
-            console.error('Failed to open new window. Popup may be blocked.');
-            return;
-        }
+                if (!newTab)
+                {
+                    throw new Error('Popup blocked');
+                }
 
-        newWindow.document.write(this.getFormTemplate());
-        newWindow.document.close();
-        newWindow.focus();
+                this.newWindowRef = newTab;
+                newTab.document.write(this.renderTemplate(template));
+                newTab.document.close();
+
+                newTab.addEventListener('load', () => {
+                    this.attachEventListeners(newTab.document);
+                    this.initializeFormController(newTab.document);
+                });
+
+                newTab.focus();
+            })
+            .catch(err => {
+                console.error('Failed to open payment tab:', err);
+                if (this.handlers.onError) {
+                    this.handlers.onError(err);
+                }
+            });
+    }
+
+    renderTemplate(template)
+    {
+        const data = this.getTemplateData();
+
+        // Simple template replacement
+        return template
+            .replace(/\{\{language\}\}/g, data.language)
+            .replace(/\{\{logoImg\}\}/g, data.logoImg)
+            .replace(/\{\{closeBtn\}\}/g, this.modal ? '<button class="close_modal" type="button">×</button>' : '')
+            .replace(/\{\{shopName\}\}/g, data.shopName)
+            .replace(/\{\{amount\}\}/g, data.amount)
+            .replace(/\{\{texts\.message\}\}/g, data.texts.message)
+            .replace(/\{\{texts\.no_app\}\}/g, data.texts.no_app)
+            .replace(/\{\{texts\.download\}\}/g, data.texts.download)
+            .replace(/\{\{texts\.card_label\}\}/g, data.texts.card_label)
+            .replace(/\{\{texts\.card_placeholder\}\}/g, data.texts.card_placeholder)
+            .replace(/\{\{texts\.otp_label\}\}/g, data.texts.otp_label)
+            .replace(/\{\{texts\.submit_button\}\}/g, data.texts.submit_button)
+            .replace(/\{\{texts\.secured_payment\}\}/g, data.texts.secured_payment);
+    }
+
+    initializeFormController(targetDocument)
+    {
+        import('./form_controller.js')
+            .then(module => {
+                if (module.default && typeof module.default === 'function') {
+                    module.default(targetDocument);
+                }
+            })
+            .catch(err => {
+                console.warn('Form controller not available:', err);
+            });
     }
 
     renderForm()
@@ -251,18 +294,12 @@ class PaymentUI
         {
             this.openNewTab();
         }
+    }
 
-        // Initialize form controller after DOM is ready
-        setTimeout(() =>
-        {
-            import('./form_controller.js').then(module =>
-            {
-                if (module.default)
-                {
-                    module.default();
-                }
-            });
-        }, 100);
+    setModalMode(isModal)
+    {
+        this.modal = isModal;
+        return this;
     }
 }
 

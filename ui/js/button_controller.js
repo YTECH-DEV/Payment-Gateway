@@ -11,9 +11,8 @@ const buttonController = () =>
         {
             const amount = btn.dataset.amount || 0;
             const modal = btn.dataset.modal || false;
-
             let paymentUIInstance = new PaymentUI();
-            paymentUIInstance.amount = amount;
+            paymentUIInstance.amount = parseFloat(amount);
             paymentUIInstance.modal = modal;
             paymentUIInstance.renderForm();
         });
