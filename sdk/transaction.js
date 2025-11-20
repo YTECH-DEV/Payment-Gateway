@@ -4,8 +4,8 @@ class Transaction
 {
     constructor(token = "", sender = "", otp = "", amount = 0, language = "en", handlers = {})
     {
-        this.sender = sender;
-        this.token = token;
+        this.sender = this.sanitizeData(sender);
+        this.token = this.sanitizeData(token);
         this.otp = otp;
         this.amount = parseFloat(amount.toString());
         this.language = language;
@@ -128,6 +128,27 @@ class Transaction
     getValidationErrors()
     {
         return this.validationError ? this.validationError.message : null;
+    }
+
+    sanitizeData(data = "")
+    {
+        if (data === "" || data === null || data === undefined)
+        {
+            return "";
+        }
+
+        data = String(data);
+
+        // Remove null bytes
+        data = data.replace(/\\0/g, '');
+
+        // Trim whitespace
+        data = data.trim();
+
+        // Strip HTML tags
+        data = data.replace(/<[^>]*>/g, '');
+
+        return data;
     }
 }
 
