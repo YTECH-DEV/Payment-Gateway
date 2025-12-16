@@ -1,8 +1,8 @@
-# YPAY Payment Gateway SDK
+# YPAY's JavaScript Payment Gateway SDK
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/YOUR_USERNAME/ypay-sdk/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/YTECH-DEV/ypay_js/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange.svg)](https://cdn.jsdelivr.net/gh/YOUR_USERNAME/ypay-sdk@1.0.0/dist/ypay-full.min.js)
+[![jsDelivr](https://img.shields.io/badge/CDN-jsDelivr-orange.svg)](https://cdn.jsdelivr.net/gh/YTECH-DEV/ypay_js@master/dist/ypay-full.min.js)
 
 YPAY is a comprehensive payment gateway solution that provides both programmatic transaction handling and a complete UI interface for payment processing. The system supports multiple currencies (XOF, USD, NGN) and languages (English, French).
 
@@ -14,20 +14,20 @@ YPAY is a comprehensive payment gateway solution that provides both programmatic
 
 ```html
 <!-- Full Bundle (SDK + UI) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/YOUR_USERNAME/ypay-sdk@1.0.0/dist/ypay-ui.min.css">
-<script src="https://cdn.jsdelivr.net/gh/YOUR_USERNAME/ypay-sdk@1.0.0/dist/ypay-full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/YTECH-DEV/ypay_js@master/dist/ypay-ui.min.css">
+<script src="https://cdn.jsdelivr.net/gh/YTECH-DEV/ypay_js@master/dist/ypay-full.min.js"></script>
 ```
 
 #### Specific Components
 
 ```html
 <!-- SDK Only -->
-<script src="https://cdn.jsdelivr.net/gh/YOUR_USERNAME/ypay-sdk@1.0.0/dist/ypay-sdk.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/YTECH-DEV/ypay_js@master/dist/ypay-sdk.min.js"></script>
 
 <!-- UI Only (requires SDK) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/YOUR_USERNAME/ypay-sdk@1.0.0/dist/ypay-ui.min.css">
-<script src="https://cdn.jsdelivr.net/gh/YOUR_USERNAME/ypay-sdk@1.0.0/dist/ypay-sdk.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/YOUR_USERNAME/ypay-sdk@1.0.0/dist/ypay-ui.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/YTECH-DEV/ypay_js@master/dist/ypay-ui.min.css">
+<script src="https://cdn.jsdelivr.net/gh/YTECH-DEV/ypay_js@master/dist/ypay-sdk.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/YTECH-DEV/ypay_js@master/dist/ypay-ui.min.js"></script>
 ```
 
 ### Via NPM
@@ -47,7 +47,7 @@ const { YPAY, Transaction } = require('ypay_js');
 
 ### Manual Download
 
-Download the latest release from [GitHub Releases](https://github.com/YOUR_USERNAME/ypay-sdk/releases) and include the files in your project:
+Download the latest release from [GitHub Releases](https://github.com/YTECH-DEV/ypay_js/releases) and include the files in your project:
 
 ```html
 <link rel="stylesheet" href="path/to/dist/ypay-ui.min.css">
