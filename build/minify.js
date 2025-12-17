@@ -24,7 +24,8 @@ function copyDirectorySync(src, dest)
 
     const entries = fs.readdirSync(src, { withFileTypes: true });
 
-    for (const entry of entries) {
+    for (const entry of entries)
+    {
         const srcPath = path.join(src, entry.name);
         const destPath = path.join(dest, entry.name);
 
@@ -37,7 +38,8 @@ function copyDirectorySync(src, dest)
 }
 
 // JavaScript minification function
-async function minifyJS(inputPath, outputPath) {
+async function minifyJS(inputPath, outputPath)
+{
     try {
         const code = fs.readFileSync(inputPath, 'utf8');
         const result = await minify(code, {
@@ -70,7 +72,8 @@ async function minifyJS(inputPath, outputPath) {
 }
 
 // CSS minification function
-function minifyCSS(inputPath, outputPath) {
+function minifyCSS(inputPath, outputPath)
+{
     try {
         const css = fs.readFileSync(inputPath, 'utf8');
         const result = new CleanCSS({
