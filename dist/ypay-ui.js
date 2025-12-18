@@ -606,7 +606,7 @@ var paymentTriggerButtons = function paymentTriggerButtons() {
       // retrieves the payment ypay_ui singleton
       var paymentUIInstance = _paymentUI["default"].instance;
       // affects the buttons parameters to the payment instance
-      paymentUIInstance.amount = parseFloat(amount);
+      paymentUIInstance.amount = amount;
       paymentUIInstance.modal = modal;
       paymentUIInstance.renderForm();
     });
